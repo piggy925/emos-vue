@@ -265,6 +265,13 @@ export default {
     }
   },
   methods: {
+    updatePasswordHandle: function () {
+      this.updatePasswordVisible = true;
+      this.$nextTick(() => {
+        this.$refs.updatePassword.init();
+      })
+    },
+
     logout: function () {
       let that = this;
       that.$http("user/logout", "GET", null, true, function (resp) {
