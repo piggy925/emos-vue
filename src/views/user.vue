@@ -149,56 +149,109 @@
 <script>
 import AddOrUpdate from './user-add-or-update.vue';
 import Dimiss from './dimiss.vue';
+
 export default {
-	components: {
-		AddOrUpdate,
-		Dimiss
-	},
-	data() {
-		return {
-			dataForm: {
-				name: '',
-				sex: '',
-				role: '',
-				deptId: '',
-				status: ''
-			},
-			dataList: [],
-			roleList: [],
-			deptList: [],
-			pageIndex: 1,
-			pageSize: 10,
-			totalCount: 0,
-			dataListLoading: false,
-			dataListSelections: [],
-			addOrUpdateVisible: false,
-			dimissVisible: false,
-			dataRule: {
-				name: [{ required: false, pattern: '^[\u4e00-\u9fa5]{1,10}$', message: '姓名格式错误' }]
-			}
-		};
-	},
-	methods: {
-		loadRoleList: function() {
-			let that = this;
-			that.$http('role/searchAllRole', 'GET', null, true, function(resp) {
-				that.roleList = resp.list;
-			});
-		},
-		loadDeptList: function() {
-			let that = this;
-			that.$http('dept/searchAllDept', 'GET', null, true, function(resp) {
-				that.deptList = resp.list;
-			});
-		},
-		selectionChangeHandle: function(val) {
-			this.dataListSelections = val;
-		}
-	},
-	created: function() {
-		this.loadRoleList();
-		this.loadDeptList();
-	}
+  components: {
+    AddOrUpdate,
+    Dimiss
+  },
+  data() {
+    return {
+      dataForm: {
+        name: '',
+        sex: '',
+        role: '',
+        deptId: '',
+        status: ''
+      },
+      dataList: [],
+      roleList: [],
+      deptList: [],
+      pageIndex: 1,
+      pageSize: 10,
+      totalCount: 0,
+      dataListLoading: false,
+      dataListSelections: [],
+      addOrUpdateVisible: false,
+      dimissVisible: false,
+      dataRule: {
+        name: [{required: false, pattern: '^[\u4e00-\u9fa5]{1,10}$', message: '姓名格式错误'}]
+      }
+    };
+  },
+  methods: {
+    loadDataList: function () {
+      let that = this;
+      this.dataListLoading = true;
+      let data = {
+        page: that.pageIndex,
+        length: that.pageSize,
+        name: that.dataForm.name,
+        sex: that.dataForm.sex,
+        role: that.dataForm.role,
+        deptId: that.dataForm.deptId,
+        status: that.dataForm.status
+      }
+      that.$http("user/searchUserByPage", "POST", data, true, function (resp) {
+        let page = resp.page;
+        let list = page.list;
+        list.forEach(one => {
+          if (one.status === 1) {
+            one.status = "在职";
+          } else if (one.status === 2) {
+            one.status = "离职";
+          }
+        })
+        that.dataList = list;
+        that.totalCount = page.totalCount;
+        that.dataListLoading = false;
+      });
+    },
+    searchHandle: function () {
+      this.$refs['dataForm'].validate(valid => {
+        if (valid) {
+          this.$refs['dataForm'].clearValidate();
+          if (this.dataForm.name === "") {
+            this.dataForm.name = null;
+          }
+          this.pageIndex = 1;
+          this.loadDataList();
+        } else {
+          return false;
+        }
+      });
+    },
+
+    sizeChangeHandle: function (val) {
+      this.pageSize = val;
+      this.pageIndex = 1;
+      this.loadDataList();
+    },
+    currentChangeHandle: function (val) {
+      this.pageIndex = val;
+      this.loadDataList();
+    },
+    loadRoleList: function () {
+      let that = this;
+      that.$http('role/searchAllRole', 'GET', null, true, function (resp) {
+        that.roleList = resp.list;
+      });
+    },
+    loadDeptList: function () {
+      let that = this;
+      that.$http('dept/searchAllDept', 'GET', null, true, function (resp) {
+        that.deptList = resp.list;
+      });
+    },
+    selectionChangeHandle: function (val) {
+      this.dataListSelections = val;
+    }
+  },
+  created: function () {
+    this.loadDataList();
+    this.loadRoleList();
+    this.loadDeptList();
+  }
 };
 </script>
 
