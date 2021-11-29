@@ -60,7 +60,10 @@ export default {
       let that = this;
       that.$refs['dataForm'].validate(valid => {
         if (valid) {
-          let data = {password: that.dataForm.confirmPassword};
+          let data = {
+            oldPassword: that.dataForm.password,
+            password: that.dataForm.confirmPassword
+          };
           that.$http("user/updatePassword", "POST", data, true, function (resp) {
             if (resp.rows === 1) {
               that.$message({
