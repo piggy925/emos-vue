@@ -207,6 +207,12 @@ export default {
         that.dataListLoading = false;
       });
     },
+    addHandle: function () {
+      this.addOrUpdateVisible = true;
+      this.$nextTick(() => {
+        this.$refs.addOrUpdate.init();
+      });
+    },
     searchHandle: function () {
       this.$refs['dataForm'].validate(valid => {
         if (valid) {
