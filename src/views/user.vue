@@ -213,6 +213,12 @@ export default {
         this.$refs.addOrUpdate.init();
       });
     },
+    updateHandle: function (id) {
+      this.addOrUpdateVisible = true;
+      this.$nextTick(() => {
+        this.$refs.addOrUpdate.init(id);
+      });
+    },
     searchHandle: function () {
       this.$refs['dataForm'].validate(valid => {
         if (valid) {
