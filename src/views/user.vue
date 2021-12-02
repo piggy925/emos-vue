@@ -219,6 +219,40 @@ export default {
         this.$refs.addOrUpdate.init(id);
       });
     },
+    deleteHandle: function (id) {
+      let that = this;
+      let ids = id ? [id] : that.dataListSelections.map(item => item.id);
+      if (ids.length == 0) {
+        that.$message({
+          message: "未选中记录",
+          type: "warning",
+          duration: 1200
+        });
+      } else {
+        that.$confirm("确定删除选中的记录？", "提示", {
+          confirmButtonText: "确定",
+          showCancelButton: "取消",
+          type: "warning"
+        }).then(() => {
+          that.$http("user/deleteUserByIds", "DELETE", {ids: ids}, true, resp => {
+            if (resp.rows > 0) {
+              that.$message({
+                message: "删除成功",
+                type: "success",
+                duration: 1200
+              });
+              that.loadDataList();
+            } else {
+              that.$message({
+                message: "删除失败",
+                type: "error",
+                duration: 1200
+              });
+            }
+          })
+        });
+      }
+    },
     searchHandle: function () {
       this.$refs['dataForm'].validate(valid => {
         if (valid) {
