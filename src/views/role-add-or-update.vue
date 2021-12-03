@@ -64,39 +64,68 @@ export default {
 	},
 
 	methods: {
-		init: function(id, systemic) {
-			let that = this;
-			that.dataForm.id = id || 0;
-			that.systemic = systemic;
-			that.visible = true;
-			that.$nextTick(() => {
-				that.$refs['dataForm'].resetFields();
-				let defaultPermissions = [];
-				if (id) {
-					that.$http('role/searchById', 'POST', { id: id }, false, function(resp) {
-						that.dataForm.roleName = resp.roleName;
-						that.dataForm.desc = resp.desc;
-						that.dataForm.permissions = JSON.parse(resp.permissions);
-						//保存原始权限数据
-						that.oldPermissions = JSON.parse(resp.permissions);
-						defaultPermissions = resp.defaultPermissions;
-					});
-				}
-				that.$http('permission/searchAllPermission', 'GET', null, true, function(resp) {
-					let temp = [];
-					for (let one of resp.list) {
-						let disabled = false;
-						if (that.systemic) {
-							disabled = defaultPermissions.includes(one.id);
-						}
-						temp.push({ key: one.id, label: `${one.moduleName}（${one.actionName}）`, disabled: disabled });
-					}
-					that.permisionList = temp;
-				});
-			});
-		},
-		
-	}
+        init: function (id, systemic) {
+            let that = this;
+            that.dataForm.id = id || 0;
+            that.systemic = systemic;
+            that.visible = true;
+            that.$nextTick(() => {
+                that.$refs['dataForm'].resetFields();
+                let defaultPermissions = [];
+                if (id) {
+                    that.$http('role/searchById', 'POST', {id: id}, false, function (resp) {
+                        that.dataForm.roleName = resp.roleName;
+                        that.dataForm.desc = resp.desc;
+                        that.dataForm.permissions = JSON.parse(resp.permissions);
+                        //保存原始权限数据
+                        that.oldPermissions = JSON.parse(resp.permissions);
+                        defaultPermissions = resp.defaultPermissions;
+                    });
+                }
+                that.$http('permission/searchAllPermission', 'GET', null, true, function (resp) {
+                    let temp = [];
+                    for (let one of resp.list) {
+                        let disabled = false;
+                        if (that.systemic) {
+                            disabled = defaultPermissions.includes(one.id);
+                        }
+                        temp.push({key: one.id, label: `${one.moduleName}（${one.actionName}）`, disabled: disabled});
+                    }
+                    that.permisionList = temp;
+                });
+            });
+        },
+        dataFormSubmit: function () {
+            let that = this;
+            that.$refs['dataForm'].validate(validate => {
+                if (validate) {
+                    that.dataForm.permissions.sort((a, b) => a - b);
+                    if (that.dataForm.permissions.join() != that.oldPermissions.join()) {
+                        that.dataForm.changed = true;
+                    } else {
+                        that.dataForm.changed = false;
+                    }
+                    that.$http(`role/${!that.dataForm.id ? "insert" : "update"}`, "POST", that.dataForm, true, resp => {
+                        if (resp.rows == 1) {
+                            that.$message({
+                                message: "操作成功",
+                                type: "success",
+                                duration: 1200
+                            });
+                            that.visible = false;
+                            that.$emit("refreshDataList");
+                        } else {
+                            that.$message({
+                                message: "操作失败",
+                                type: "success",
+                                duration: 1200
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    }
 };
 </script>
 
