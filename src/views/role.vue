@@ -104,6 +104,7 @@
 
 <script>
 import AddOrUpdate from './role-add-or-update.vue';
+
 export default {
     components: {
         AddOrUpdate
@@ -126,17 +127,58 @@ export default {
         };
     },
     methods: {
-        selectionChangeHandle: function(val) {
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                roleName: that.dataForm.roleName,
+                page: that.pageIndex,
+                length: that.pageSize
+            };
+            that.$http('role/searchRoleByPage', 'POST', data, true, function (resp) {
+                let page = resp.page;
+                that.dataList = page.list;
+                that.totalCount = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        searchHandle: function () {
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    this.$refs['dataForm'].clearValidate();
+                    if (this.dataForm.roleName == '') {
+                        this.dataForm.roleName = null;
+                    }
+                    if (this.pageIndex != 1) {
+                        this.pageIndex = 1;
+                    }
+                    this.loadDataList();
+                } else {
+                    return false;
+                }
+            });
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        },
+        selectionChangeHandle: function (val) {
             this.dataListSelections = val;
         },
-        selectable: function(row, index) {
+        selectable: function (row, index) {
             if (row.systemic || row.users > 0) {
                 return false;
             }
             return true;
-        },
-        
-        
+        }
+    },
+    created: function () {
+        this.loadDataList();
     }
 };
 </script>
