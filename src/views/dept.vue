@@ -90,44 +90,83 @@
 
 <script>
 import AddOrUpdate from './dept-add-or-update.vue';
+
 export default {
-	components: {
-		AddOrUpdate
-	},
-	data: function() {
-		return {
-			dataForm: {
-				deptName: null
-			},
-			dataList: [],
-			pageIndex: 1,
-			pageSize: 10,
-			totalCount: 0,
-			dataListLoading: false,
-			dataListSelections: [],
-			addOrUpdateVisible: false,
-			dataRule: {
-				deptName: [
-					{ required: false, pattern: '^[a-zA-Z0-9\u4e00-\u9fa5]{1,10}$', message: '部门名称格式错误' }
-				]
-			}
-		};
-	},
-	methods: {
-		
-		selectable:function(row,index){
-			if(row.emps>0){
-				return false
-			}
-			return true
-		},
-		selectionChangeHandle: function(val) {
-			this.dataListSelections = val;
-		},
-		
-		
-	},
-	
+    components: {
+        AddOrUpdate
+    },
+    data: function () {
+        return {
+            dataForm: {
+                deptName: null
+            },
+            dataList: [],
+            pageIndex: 1,
+            pageSize: 10,
+            totalCount: 0,
+            dataListLoading: false,
+            dataListSelections: [],
+            addOrUpdateVisible: false,
+            dataRule: {
+                deptName: [
+                    {required: false, pattern: '^[a-zA-Z0-9\u4e00-\u9fa5]{1,10}$', message: '部门名称格式错误'}
+                ]
+            }
+        };
+    },
+    methods: {
+
+        selectable: function (row, index) {
+            if (row.emps > 0) {
+                return false
+            }
+            return true
+        },
+        selectionChangeHandle: function (val) {
+            this.dataListSelections = val;
+        },
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                page: that.pageIndex,
+                length: that.pageSize,
+                deptName: that.dataForm.deptName
+            };
+            that.$http("dept/searchDeptByPage", "POST", data, true, resp => {
+                let page = resp.page;
+                that.dataList = page.list;
+                that.totalCount = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        },
+        searchHandle: function () {
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    this.$refs['dataForm'].clearValidate();
+                    if (this.dataForm.deptName == '') {
+                        this.dataForm.deptName = null;
+                    }
+                    this.pageIndex = 1;
+                    this.loadDataList();
+                } else {
+                    return false;
+                }
+            });
+        }
+    },
+    created: function () {
+        this.loadDataList();
+    }
 };
 </script>
 
