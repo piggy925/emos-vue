@@ -106,91 +106,167 @@
 
 <script>
 import SvgIcon from '../components/SvgIcon.vue';
-import dayjs from 'dayjs';
 import Add from './offline_meeting-add.vue';
 import Info from './offline_meeting-info.vue';
+import dayjs from "dayjs";
+
 export default {
-	components: { SvgIcon, Add, Info },
-	data: function() {
-		return {
-			time: [
-				'08:30',
-				'09:00',
-				'09:30',
-				'10:00',
-				'10:30',
-				'11:00',
-				'11:30',
-				'12:00',
-				'12:30',
-				'13:00',
-				'13:30',
-				'14:00',
-				'14:30',
-				'15:00',
-				'15:30',
-				'16:00',
-				'16:30',
-				'17:00',
-				'17:30',
-				'18:00',
-				'18:30'
-			],
-			gantt: {
-				meetingRoom: [],
-				cellWidth: 0
-			},
-			calendar: {
-				map: {},
-				days: []
-			},
-			roomList: [],
-			dataForm: {
-				name: null,
-				date: null,
-				mold: '全部会议'
-			},
-			pageIndex: 1,
-			pageSize: 10,
-			totalCount: 0,
-			dataListLoading: false,
-			addVisible: false,
-			infoVisble: false,
-			dataRule: {},
-			mode: 'gantt'
-		};
-	},
-	methods: {
-		backHandle: function() {
-			let that = this;
-			that.mode = 'gantt';
-		},
-	},
-	mounted: function() {
-		let that=this
-		//根据实际情况设置甘特图每个单元格应该有的宽度
-		let rowWidth = that.$refs['gantt'].offsetWidth - 1;
-		let cellWidth = rowWidth * 0.042 + 0.01;
-		that.gantt.cellWidth = cellWidth;
+    components: {SvgIcon, Add, Info},
+    data: function () {
+        return {
+            time: [
+                '08:30',
+                '09:00',
+                '09:30',
+                '10:00',
+                '10:30',
+                '11:00',
+                '11:30',
+                '12:00',
+                '12:30',
+                '13:00',
+                '13:30',
+                '14:00',
+                '14:30',
+                '15:00',
+                '15:30',
+                '16:00',
+                '16:30',
+                '17:00',
+                '17:30',
+                '18:00',
+                '18:30'
+            ],
+            gantt: {
+                meetingRoom: [],
+                cellWidth: 0
+            },
+            calendar: {
+                map: {},
+                days: []
+            },
+            roomList: [],
+            dataForm: {
+                name: null,
+                date: null,
+                mold: '全部会议'
+            },
+            pageIndex: 1,
+            pageSize: 10,
+            totalCount: 0,
+            dataListLoading: false,
+            addVisible: false,
+            infoVisble: false,
+            dataRule: {},
+            mode: 'gantt'
+        };
+    },
+    methods: {
+        backHandle: function () {
+            let that = this;
+            that.mode = 'gantt';
+        },
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                name: that.dataForm.name,
+                mold: that.dataForm.mold,
+                page: that.pageIndex,
+                length: that.pageSize
+            };
+            if (that.dataForm.date == null || that.dataForm.date == '') {
+                data.date = dayjs(new Date()).format('YYYY-MM-DD');
+            } else {
+                data.date = dayjs(that.dataForm.date).format('YYYY-MM-DD');
+            }
+            that.$http('meeting/searchOfflineMeetingByPage', 'POST', data, true, function (resp) {
+                let page = resp.page;
+                let temp = [];
+                for (let room of page.list) {
+                    let json = {};
+                    json.name = room.name;
+                    json.meeting = {};
+                    if (room.hasOwnProperty('meeting')) {
+                        for (let meeting of room.meeting) {
+                            let color;
+                            if (meeting.status == 1) {
+                                color = 'yellow';
+                            } else if (meeting.status == 3) {
+                                color = 'blue';
+                            } else if (meeting.status == 4) {
+                                color = 'pink';
+                            } else if (meeting.status == 5) {
+                                color = 'gray';
+                            }
+                            json.meeting[meeting.start] = meeting.time + '#' + color;
+                        }
+                    }
+                    temp.push(json);
+                }
+                that.gantt.meetingRoom = temp;
+                that.totalCount = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        searchHandle: function () {
+            let that = this;
+            //查询甘特图数据
+            if (that.dataForm.name == null || that.dataForm.name == '') {
+                that.$refs['dataForm'].validate(valid => {
+                    if (valid) {
+                        that.$refs['dataForm'].clearValidate();
+                        that.dataForm.name = null;
+                        if (that.pageIndex != 1) {
+                            that.pageIndex = 1;
+                        }
+                        that.loadDataList();
+                        that.mode = 'gantt';
+                    } else {
+                        return false;
+                    }
+                });
+            }
+        },
+        //切换“我的会议”和“全部会议”时候触发事件的回调函数
+        changeHandle: function (val) {
+            this.searchHandle();
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        }
+    },
+    mounted: function () {
+        let that = this
+        //根据实际情况设置甘特图每个单元格应该有的宽度
+        let rowWidth = that.$refs['gantt'].offsetWidth - 1;
+        let cellWidth = rowWidth * 0.042 + 0.01;
+        that.gantt.cellWidth = cellWidth;
 
-		//当浏览器窗口尺寸改变的时候，重新设置甘特图单元格的宽度
-		window.addEventListener('resize', () => {
-			let rowWidth = that.$refs['gantt'].offsetWidth - 1;
-			let cellWidth = rowWidth * 0.042 + 0.01;
-			that.gantt.cellWidth = cellWidth;
-		})
-	},
-	created: function() {
-		
-		let that = this;	
-		//加载会议室列表
-		that.$http('meeting_room/searchAllMeetingRoom', 'GET', null, true, function(resp) {
-			that.roomList = resp.list;
-		});
+        //当浏览器窗口尺寸改变的时候，重新设置甘特图单元格的宽度
+        window.addEventListener('resize', () => {
+            let rowWidth = that.$refs['gantt'].offsetWidth - 1;
+            let cellWidth = rowWidth * 0.042 + 0.01;
+            that.gantt.cellWidth = cellWidth;
+        })
+    },
+    created: function () {
 
-		//加载分页数据
-		that.loadDataList();
-	}
+        let that = this;
+        //加载会议室列表
+        that.$http('meeting_room/searchAllMeetingRoom', 'GET', null, true, function (resp) {
+            that.roomList = resp.list;
+        });
+
+        //加载分页数据
+        that.loadDataList();
+    }
 };
 </script>
 
