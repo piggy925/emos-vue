@@ -97,60 +97,112 @@
 </template>
 
 <script>
-import dayjs from 'dayjs';
+import dayjs from "dayjs";
+
 export default {
-	data: function() {
-		return {
-			visible: false,
-			dataForm: {
-				title: null,
-				date: null,
-				start: null,
-				end: null,
-				place: null,
-				desc: null,
-				members: [],
-				type: 2
-			},
+    data: function () {
+        return {
+            visible: false,
+            dataForm: {
+                title: null,
+                date: null,
+                start: null,
+                end: null,
+                place: null,
+                desc: null,
+                members: [],
+                type: 2
+            },
 
-			disabledDate(date) {
-				return date.getTime() < Date.now() - 24 * 60 * 60 * 1000;
-			},
+            disabledDate(date) {
+                return date.getTime() < Date.now() - 24 * 60 * 60 * 1000;
+            },
 
-			placeList: [],
-			users: [],
-			dataRule: {
-				title: [{ required: true, pattern: '^[a-zA-Z0-9\u4e00-\u9fa5]{2,30}$', message: '会议主题格式错误' }],
-				desc: [{ required: true, message: '会议内容为必填' }],
-				date: [{ required: true, message: '日期为必填' }],
-				start: [{ required: true, message: '起始时间为必填' }],
-				end: [{ required: true, message: '结束时间为必填' }],
-				place: [{ required: true, message: '选择一个会议室' }],
-				members: [
-					{ required: true, trigger: 'blur', message: '必须设置参会人' },
-					{ required: false, trigger: 'change', message: '必须设置参会人' }
-				]
-			}
-		};
+            placeList: [],
+            users: [],
+            dataRule: {
+                title: [{required: true, pattern: '^[a-zA-Z0-9\u4e00-\u9fa5]{2,30}$', message: '会议主题格式错误'}],
+                desc: [{required: true, message: '会议内容为必填'}],
+                date: [{required: true, message: '日期为必填'}],
+                start: [{required: true, message: '起始时间为必填'}],
+                end: [{required: true, message: '结束时间为必填'}],
+                place: [{required: true, message: '选择一个会议室'}],
+                members: [
+                    {required: true, trigger: 'blur', message: '必须设置参会人'},
+                    {required: false, trigger: 'change', message: '必须设置参会人'}
+                ]
+            }
+        };
 	},
 
 	methods: {
-		init: function(id) {
-			let that = this;
-			that.visible = true;
-			that.$nextTick(() => {
-				that.$refs['dataForm'].resetFields();
-				that.$http('user/searchAllUser', 'GET', null, true, function(resp) {
-					let temp = [];
-					for (let one of resp.list) {
-						temp.push({ key: one.id, label: one.name });
-					}
-					that.users = temp;
-				});
-			});
-		},
-		
-	}
+        init: function (id) {
+            let that = this;
+            that.visible = true;
+            that.$nextTick(() => {
+                that.$refs['dataForm'].resetFields();
+                that.$http('user/searchAllUser', 'GET', null, true, function (resp) {
+                    let temp = [];
+                    for (let one of resp.list) {
+                        temp.push({key: one.id, label: one.name});
+                    }
+                    that.users = temp;
+                });
+            });
+        },
+        loadPlaceList: function () {
+            let that = this;
+            that.dataForm.place = null;
+            that.placeList = [];
+            if (
+                that.dataForm.date == null ||
+                that.dataForm.date == '' ||
+                that.dataForm.start == null ||
+                that.dataForm.start == '' ||
+                that.dataForm.end == null ||
+                that.dataForm.end == ''
+            ) {
+                return;
+            }
+            let data = {
+                date: dayjs(that.dataForm.date).format('YYYY-MM-DD'),
+                start: that.dataForm.start,
+                end: that.dataForm.end
+            };
+            that.$http('meeting_room/searchFreeMeetingRoom', 'POST', data, true, function (resp) {
+                that.placeList = resp.list;
+            });
+        },
+        dataFormSubmit: function () {
+            let that = this;
+            let data = that.dataForm;
+            data.date = dayjs(data.date).format("YYYY-MM-DD");
+            data.members = JSON.stringify(data.members);
+            that.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    that.$http("meeting/insert", "POST", data, true, resp => {
+                        if (resp.rows == 1) {
+                            that.visible = false;
+                            that.$message({
+                                message: "会议添加成功",
+                                type: "success",
+                                duration: 1200
+                            });
+                            setTimeout(() => {
+                                that.$emit("refresh")
+                            }, 1200);
+                        } else {
+                            that.$message({
+                                message: "会议添加失败",
+                                type: "error",
+                                duration: 1200
+                            });
+                        }
+                    })
+                }
+            });
+        }
+    }
 };
 </script>
 

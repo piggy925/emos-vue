@@ -240,6 +240,17 @@ export default {
         currentChangeHandle: function (val) {
             this.pageIndex = val;
             this.loadDataList();
+        },
+        addHandle: function () {
+            this.addVisible = true;
+            this.$nextTick(() => {
+                this.$refs.add.init();
+            });
+        },
+        refresh: function () {
+            this.mode = "gantt";
+            this.$refs["dataForm"].resetFields();
+            this.loadDataList();
         }
     },
     mounted: function () {
