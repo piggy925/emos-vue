@@ -226,6 +226,31 @@ export default {
                         return false;
                     }
                 });
+            } else {
+                // 查询周日历数据
+                that.$refs['dataForm'].validate(valid => {
+                    if (valid) {
+                        that.$refs['dataForm'].clearValidate();
+                        let data = {
+                            name: that.dataForm.name,
+                            mold: that.dataForm.mold
+                        };
+                        if (that.dataForm.date != null && that.dataForm.date != '') {
+                            data.date = dayjs(that.dataForm.date).format("YYYY-MM-DD");
+                        }
+                        that.$http("meeting/searchOfflineMeetingByWeek", "POST", data, true, resp => {
+                            let map = {};
+                            for (let one of resp.list) {
+                                map[`${one.date}#${one.start}`] = one;
+                            }
+                            that.calendar.map = map;
+                            that.calendar.days = resp.days;
+                            that.mode = 'calendar';
+                        });
+                    } else {
+                        return false;
+                    }
+                });
             }
         },
         //切换“我的会议”和“全部会议”时候触发事件的回调函数
