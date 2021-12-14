@@ -272,6 +272,12 @@ export default {
                 this.$refs.add.init();
             });
         },
+        infoHandle: function (id, status) {
+            this.infoVisble = true;
+            this.$nextTick(() => {
+                this.$refs.info.init(id, status);
+            });
+        },
         refresh: function () {
             this.mode = "gantt";
             this.$refs["dataForm"].resetFields();
