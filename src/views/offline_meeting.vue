@@ -278,6 +278,38 @@ export default {
                 this.$refs.info.init(id, status);
             });
         },
+        deleteHandle: function (key) {
+            let that = this;
+            that.$confirm("是否删除该会议？", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            }).then(() => {
+                let json = that.calendar.map[key];
+                let data = {
+                    id: json.id,
+                    uuid: json.uuid,
+                    instanceId: json.instanceId,
+                    reason: "删除会议"
+                }
+                that.$http("meeting/deleteMeetingApplication", "POST", data, true, resp => {
+                    if (resp.rows == 1) {
+                        that.$message({
+                            message: "删除成功",
+                            type: "success",
+                            duration: 1200
+                        });
+                        that.searchHandle();
+                    } else {
+                        that.$message({
+                            message: "删除失败",
+                            type: "error",
+                            duration: 1200
+                        });
+                    }
+                });
+            });
+        },
         refresh: function () {
             this.mode = "gantt";
             this.$refs["dataForm"].resetFields();
