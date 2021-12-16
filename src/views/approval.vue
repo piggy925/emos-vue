@@ -206,38 +206,84 @@
 
 <script>
 import Archive from './archive.vue';
+
 export default {
-	components: {
-		Archive
-	},
-	data: function() {
-		return {
-			pageIndex: 1,
-			pageSize: 10,
-			totalPage: 0,
-			dataListLoading: false,
-			archiveVisible: false,
-			dataForm: {
-				creatorName: null,
-				type: null,
-				status: '待审批',
-				instanceId: null
-			},
-			dataList: [],
-			content: {},
-			bpmnUrl: null,
-			bpmnList: [],
-			archiveList: [],
-			dataRule: {
-				creatorName: [{ required: false, pattern: '^[\u4e00-\u9fa5]{2,20}$', message: '姓名格式错误' }],
-				instanceId: [{ required: false, pattern: '^[0-9A-Za-z\\-]{36}$', message: '实例编号格式错误' }]
-			}
-		};
-	},
-	methods: {
-		
-	},
-	
+    components: {
+        Archive
+    },
+    data: function () {
+        return {
+            pageIndex: 1,
+            pageSize: 10,
+            totalPage: 0,
+            dataListLoading: false,
+            archiveVisible: false,
+            dataForm: {
+                creatorName: null,
+                type: null,
+                status: '待审批',
+                instanceId: null
+            },
+            dataList: [],
+            content: {},
+            bpmnUrl: null,
+            bpmnList: [],
+            archiveList: [],
+            dataRule: {
+                creatorName: [{required: false, pattern: '^[\u4e00-\u9fa5]{2,20}$', message: '姓名格式错误'}],
+                instanceId: [{required: false, pattern: '^[0-9A-Za-z\\-]{36}$', message: '实例编号格式错误'}]
+            }
+        };
+    },
+    methods: {
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                creatorName: that.dataForm.creatorName,
+                type: that.dataForm.type,
+                status: that.dataForm.status,
+                instanceId: that.dataForm.instanceId,
+                page: that.pageIndex,
+                length: that.pageSize
+            };
+            that.$http("approval/searchTaskByPage", "POST", data, true, resp => {
+                let page = resp.page;
+                that.dataList = page.list;
+                that.totalCount = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        searchHandle: function () {
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    this.$refs['dataForm'].clearValidate();
+                    if (this.dataForm.creatorName == '') {
+                        this.dataForm.creatorName == null;
+                    }
+                    if (this.dataForm.instanceId == '') {
+                        this.dataForm.instanceId == null;
+                    }
+                    this.pageIndex = 1;
+                    this.loadDataList();
+                } else {
+                    return false;
+                }
+            });
+        }
+    },
+    created: function () {
+        this.loadDataList();
+    }
 };
 </script>
 
