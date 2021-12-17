@@ -279,6 +279,19 @@ export default {
                     return false;
                 }
             });
+        },
+        expand: function (row, expandedRows) {
+            if (expandedRows.length > 0) {
+                let that = this;
+                let data = {
+                    instanceId: row.processId,
+                    type: row.type,
+                    status: row.status
+                }
+                that.$http("approval/searchApprovalContent", "POST", data, false, resp => {
+                    that.content = resp.content;
+                });
+            }
         }
     },
     created: function () {
