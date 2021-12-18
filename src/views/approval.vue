@@ -291,6 +291,8 @@ export default {
                 that.$http("approval/searchApprovalContent", "POST", data, false, resp => {
                     that.content = resp.content;
                 });
+                that.bpmnUrl = that.$baseUrl + "approval/searchApprovalBpmn" + "?instanceId=" + row.processId + "&time=" + new Date().getTime();
+                that.bpmnList = [that.bpmnUrl];
             }
         }
     },
