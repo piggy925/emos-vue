@@ -294,6 +294,36 @@ export default {
                 that.bpmnUrl = that.$baseUrl + "approval/searchApprovalBpmn" + "?instanceId=" + row.processId + "&time=" + new Date().getTime();
                 that.bpmnList = [that.bpmnUrl];
             }
+        },
+        approve: function (taskId, approval) {
+            let that = this;
+            let data = {
+                taskId: taskId,
+                approval: approval
+            };
+            that.$http("approval/approvalTask", "POST", data, true, resp => {
+                that.pageIndex = 1;
+                that.loadDataList();
+            });
+        },
+        approveHandle: function (taskId) {
+            let that = this;
+            that.$confirm("请选择审批意见", "提示", {
+                confirmButtonText: "同意",
+                cancelButtonText: "不同意",
+                type: "warning",
+                distinguishCancelAndClose: true,
+                callback: function (action) {
+                    if (action == 'confirm') {
+                        that.approve(taskId, "同意");
+                    } else if (action == 'confirm') {
+                        that.approve(taskId, "不同意")
+                    }
+                }
+            });
+        },
+        viewHandle: function (row) {
+            this.$refs.approvalTable.toggleRowExpansion(row, true);
         }
     },
     created: function () {
