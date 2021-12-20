@@ -111,10 +111,78 @@ export default {
         };
     },
     methods: {
-        
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                mold: that.dataForm.mold,
+                page: that.pageIndex,
+                length: that.pageSize
+            };
+            if (that.dataForm.date != null && that.dataForm.date != '') {
+                data.date = dayjs(that.dataForm.date).format('YYYY-MM-DD');
+            }
+            that.$http('meeting/searchOnlineMeetingByPage', 'POST', data, true, function (resp) {
+                let page = resp.page;
+                for (let one of page.list) {
+                    if (one.status == 1) {
+                        one.status = '待审批';
+                    } else if (one.status == 3) {
+                        one.status = '未开始';
+                    } else if (one.status == 4) {
+                        one.status = '进行中';
+                    } else if (one.status == 5) {
+                        one.status = '已结束';
+                    }
+                    //计算会议是否可以进入
+                    //1.开会前15分钟可以进入会议室
+                    //2.会议状态必须是未开始或者进行中
+                    let minute = dayjs(new Date()).diff(dayjs(`${one.date} ${one.start}`), 'minute');
+                    if (
+                        one.mine == 'true' &&
+                        ((minute >= -15 && minute <= 0 && one.status == '未开始') || one.status == '进行中')
+                    ) {
+                        one.canEnterMeeting = true;
+                    } else {
+                        one.canEnterMeeting = false;
+                    }
+                }
+                that.dataList = page.list;
+                that.totalCount = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        },
+        searchHandle: function () {
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    this.$refs['dataForm'].clearValidate();
+                    if (this.dataForm.name == '') {
+                        this.dataForm.name = null;
+                    }
+                    if (this.pageIndex != 1) {
+                        this.pageIndex = 1;
+                    }
+                    this.loadDataList();
+                } else {
+                    return false;
+                }
+            });
+        },
+        changeHandle: function (val) {
+            this.searchHandle();
+        }
     },
     created: function() {
-        
+        this.loadDataList();
     }
 };
 </script>
