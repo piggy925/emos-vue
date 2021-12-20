@@ -179,6 +179,16 @@ export default {
         },
         changeHandle: function (val) {
             this.searchHandle();
+        },
+        refresh: function () {
+            this.$refs['dataForm'].resetFields();
+            this.loadDataList();
+        },
+        addHandle: function () {
+            this.addVisible = true;
+            this.$nextTick(() => {
+                this.$refs.add.init();
+            });
         }
     },
     created: function() {
