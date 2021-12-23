@@ -180,6 +180,24 @@ export default {
         changeHandle: function (val) {
             this.searchHandle();
         },
+        enterHandle: function (id, uuid) {
+            let that = this;
+            if (id == null) {
+                that.$message({
+                    message: "视频会议室不存在",
+                    type: "error",
+                    duration: 1200
+                });
+            } else {
+                that.$router.push({
+                    name: "MeetingVideo",
+                    params: {
+                        meetingId: id,
+                        uuid: uuid
+                    }
+                });
+            }
+        },
         refresh: function () {
             this.$refs['dataForm'].resetFields();
             this.loadDataList();

@@ -62,34 +62,54 @@
 </template>
 
 <script>
-import TRTC from 'trtc-js-sdk';
-import $ from 'jquery';
 export default {
-	data: function() {
-		return {
-			meetingId: null,
-			uuid: null,
-			appId: null,
-			userSign: null,
-			userId: null,
-			roomId: null,
-			meetingStatus: false,
-			videoStatus: true,
-			micStatus: true,
-			shareStatus: false,
-			userList: [], //进入会场的用户列表
-			mine: {},
-			memberList: [], //会议成员列表
-			client: null,
-			localStream: null,
-			shareStream: null,
-			stream: {}, //所有的远端流
-			bigVideoUserId: null //大屏显示远端流的用户ID，切换回小屏幕的时候使用
-		};
-	},
-	methods: {
-		
-	},
+    data: function () {
+        return {
+            meetingId: null,
+            uuid: null,
+            appId: null,
+            userSign: null,
+            userId: null,
+            roomId: null,
+            meetingStatus: false,
+            videoStatus: true,
+            micStatus: true,
+            shareStatus: false,
+            userList: [], //进入会场的用户列表
+            mine: {},
+            memberList: [], //会议成员列表
+            client: null,
+            localStream: null,
+            shareStream: null,
+            stream: {}, //所有的远端流
+            bigVideoUserId: null //大屏显示远端流的用户ID，切换回小屏幕的时候使用
+        };
+    },
+    methods: {},
+    created: function () {
+        let that = this;
+        let params = that.$route.params;
+        that.meetingId = params.meetingId;
+        that.uuid = params.uuid;
+        let data = {
+            meetingId: that.meetingId
+        }
+        that.$http("meeting/searchOnlineMeetingMembers", "POST", data, true, resp => {
+            let list = resp.list;
+            if (list != null && list.length > 0) {
+                that.mine = list[0];
+                for (let i = 1; i < list.length; i++) {
+                    that.memberList.push(list[i]);
+                }
+            }
+        });
+        data = {
+            uuid: that.uuid
+        }
+        that.$http("meeting/searchRoomIdByUUID", "POST", data, true, resp => {
+            that.roomId = resp.roomId;
+        });
+    }
 }
 </script>
 
