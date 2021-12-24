@@ -207,6 +207,37 @@ export default {
             this.$nextTick(() => {
                 this.$refs.add.init();
             });
+        },
+        deleteHandle: function (json) {
+            let that = this;
+            that.$confirm('是否删除该会议?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                let data = {
+                    id: json.id,
+                    uuid: json.uuid,
+                    instanceId: json.instanceId,
+                    reason: '删除会议申请'
+                };
+                that.$http('meeting/deleteMeetingApplication', 'post', data, true, function (resp) {
+                    if (resp.rows == 1) {
+                        that.$message({
+                            message: '删除成功',
+                            type: 'success',
+                            duration: 1200
+                        });
+                        that.searchHandle();
+                    } else {
+                        that.$message({
+                            message: '删除失败',
+                            type: 'error',
+                            duration: 1200
+                        });
+                    }
+                });
+            });
         }
     },
     created: function() {
