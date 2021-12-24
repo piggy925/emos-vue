@@ -62,6 +62,9 @@
 </template>
 
 <script>
+import TRTC from 'trtc-js-sdk';
+import $ from 'jquery';
+
 export default {
     data: function () {
         return {
@@ -85,7 +88,124 @@ export default {
             bigVideoUserId: null //大屏显示远端流的用户ID，切换回小屏幕的时候使用
         };
     },
-    methods: {},
+    methods: {
+        phoneHandle: function () {
+            let that = this;
+            TRTC.checkSystemRequirements().then(checkResult => {
+                if (!checkResult.result) {
+                    that.$alert(
+                        "当前浏览器不支持在线视频会议", "提示", {
+                            confirmButtonText: "确定"
+                        }
+                    );
+                } else {
+                    that.meetingStatus = !that.meetingStatus;
+                    if (that.meetingStatus) {
+                        // 设置摄像头与麦克风状态
+                        that.videoStatus = true;
+                        that.micStatus = true;
+                        // 设置TRTC日志级别
+                        TRTC.Logger.setLogLevel(TRTC.Logger.LogLevel.ERROR);
+                        // 生成用户签名
+                        that.$http("meeting/searchMyUserSig", "GET", {}, false, resp => {
+                            that.appId = resp.appId;
+                            that.userSig = resp.userSig;
+                            that.userId = resp.userId;
+                        });
+                        let client = TRTC.createClient({
+                            mode: "rtc",
+                            sdkAppId: that.appId,
+                            userId: that.userId,
+                            userSig: that.userSig
+                        });
+                        that.client = client;
+                        // 监听远端流新增事件(用户刚进入会议室时触发)
+                        client.on("stream-added", event => {
+                            let remoteStream = event.stream;
+                            // 订阅远端流
+                            client.subscribe(remoteStream);
+                            // 从远端流获取远程用户userId
+                            let userId = remoteStream.getUserId();
+
+                            // TODO 将新进入会议室的人添加到右侧的在线列表中
+
+                            // 将远端流保存到模型层JSON
+                            that.stream[userId] = remoteStream;
+                        });
+
+                        // 监听远端流订阅成功事件
+                        client.on("stream-subscribed", event => {
+                            let remoteStream = event.stream;
+                            let userId = remoteStream.getUserId();
+                            // 用视频墙中的播放视频的用户格子置顶，以覆盖用户信息格子
+                            $('#' + userId).css({'z-index': 1});
+                            // 在置顶的DIV中播放远端视频
+                            remoteStream.play(userId + '');
+                        });
+
+                        // 监听远端删除流事件（用户退出会议室）
+                        client.on("stream-removed", event => {
+                            let remoteStream = event.stream;
+                            // 取消订阅该远端流
+                            client.unsubscribe(remoteStream);
+                            let userId = remoteStream.getUserId();
+
+                            // TODO 在页面右侧的用户列表中删除用户
+
+                            // 停止播放远端流视频、关闭远端流
+                            remoteStream.stop();
+                            remoteStream.close();
+                            // 删除模型层JSON中的远端流对象
+                            delete that.stream[userId];
+                            // 将视频格子置底，显示用户基本信息
+                            $('#' + userId).css({'z-index': '-1'}).html('');
+                        });
+
+                        client.join({roomId: that.roomId}).then(() => {
+                            // 执行签到
+                            that.$http("meeting/updateMeetingPresent", "POST", {meetingId: that.meetingId}, true, resp => {
+                                if (resp.rows == 1) {
+                                    that.$message({
+                                        message: "签到成功",
+                                        type: "success",
+                                        duration: 1200
+                                    });
+                                }
+                            });
+
+                            // 创建本地流对象
+                            let localStream = TRTC.createStream({
+                                userId: that.userId + '',
+                                audio: true,
+                                video: true
+                            })
+                            that.localStream = localStream;
+                            localStream.setVideoProfile("480p");
+
+                            // TODO 将自己添加到右侧用户列表中
+
+                            // 初始化本地音视频流
+                            localStream.initialize().then(() => {
+                                $('#localStream').css({'z-index': '1'});
+                                localStream.play('localStream');
+                                client.publish().then(() => {
+                                    console.log("推送本地流成功")
+                                }).catch(error => {
+                                    console.log("推送本地流失败: " + error)
+                                });
+                            }).catch(error => {
+                                console.log("初始化本地流失败: " + error)
+                            });
+                        }).catch(error => {
+                            console.log("进入房间失败： " + error);
+                        });
+                    } else {
+                        // TODO 关闭视频会议
+                    }
+                }
+            });
+        }
+    },
     created: function () {
         let that = this;
         let params = that.$route.params;
