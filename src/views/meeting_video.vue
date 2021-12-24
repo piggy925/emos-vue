@@ -127,7 +127,14 @@ export default {
                             // 从远端流获取远程用户userId
                             let userId = remoteStream.getUserId();
 
-                            // TODO 将新进入会议室的人添加到右侧的在线列表中
+                            // 将新进入会议室的人添加到右侧的在线列表中
+                            that.$http("user/searchNameAndDept", "POST", {userId: userId}, true, resp => {
+                                that.userList.push({
+                                    userId: userId,
+                                    userName: resp.userName,
+                                    deptName: resp.deptName
+                                })
+                            });
 
                             // 将远端流保存到模型层JSON
                             that.stream[userId] = remoteStream;
@@ -182,7 +189,14 @@ export default {
                             that.localStream = localStream;
                             localStream.setVideoProfile("480p");
 
-                            // TODO 将自己添加到右侧用户列表中
+                            // 将自己添加到右侧用户列表中
+                            that.$http("user/searchNameAndDept", "POST", {userId: that.userId}, true, resp => {
+                                that.userList.push({
+                                    userId: that.userId,
+                                    name: resp.name,
+                                    dept: resp.dept
+                                })
+                            });
 
                             // 初始化本地音视频流
                             localStream.initialize().then(() => {
