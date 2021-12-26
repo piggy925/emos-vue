@@ -89,6 +89,16 @@ export default {
         };
     },
     methods: {
+        getStream: function () {
+            let that = this;
+            let stream = null;
+            if (that.localStream != null) {
+                stream = that.localStream;
+            } else if (that.shareStream != null) {
+                stream = that.shareStream;
+            }
+            return stream;
+        },
         phoneHandle: function () {
             let that = this;
             TRTC.checkSystemRequirements().then(checkResult => {
@@ -115,7 +125,7 @@ export default {
                         let client = TRTC.createClient({
                             mode: "rtc",
                             sdkAppId: that.appId,
-                            userId: that.userId,
+                            userId: that.userId + '',
                             userSig: that.userSig
                         });
                         that.client = client;
@@ -131,8 +141,8 @@ export default {
                             that.$http("user/searchNameAndDept", "POST", {userId: userId}, true, resp => {
                                 that.userList.push({
                                     userId: userId,
-                                    userName: resp.userName,
-                                    deptName: resp.deptName
+                                    name: resp.name,
+                                    dept: resp.dept
                                 })
                             });
 
@@ -157,7 +167,11 @@ export default {
                             client.unsubscribe(remoteStream);
                             let userId = remoteStream.getUserId();
 
-                            // TODO 在页面右侧的用户列表中删除用户
+                            // 在页面右侧的用户列表中删除用户
+                            let i = that.userList.findIndex(one => {
+                                return one.userId == userId
+                            });
+                            that.userList.splice(i, 1);
 
                             // 停止播放远端流视频、关闭远端流
                             remoteStream.stop();
@@ -165,8 +179,22 @@ export default {
                             // 删除模型层JSON中的远端流对象
                             delete that.stream[userId];
                             // 将视频格子置底，显示用户基本信息
-                            $('#' + userId).css({'z-index': '-1'}).html('');
+                            $('#' + userId).css({'z-index': -1}).html('');
                         });
+
+                        //订阅语音事件（无论本地还是远端说话，都会触发这个事件）
+                        client.on('audio-volume', event => {
+                            event.result.forEach(({userId, audioVolume, stream}) => {
+                                //说话声音超过5，就设置话筒音量动画
+                                if (audioVolume > 5) {
+                                    $('#mic-' + userId).css('top', `${100 - audioVolume * 3}%`);
+                                } else {
+                                    $('#mic-' + userId).css('top', `100%`);
+                                }
+                            });
+                        });
+                        // 开启音量回调函数，并设置每 30ms 触发一次事件
+                        client.enableAudioVolumeEvaluation(30);
 
                         client.join({roomId: that.roomId}).then(() => {
                             // 执行签到
@@ -200,21 +228,42 @@ export default {
 
                             // 初始化本地音视频流
                             localStream.initialize().then(() => {
-                                $('#localStream').css({'z-index': '1'});
+                                $('#localStream').css({'z-index': 1});
                                 localStream.play('localStream');
-                                client.publish().then(() => {
+                                client.publish(localStream).then(() => {
                                     console.log("推送本地流成功")
                                 }).catch(error => {
-                                    console.log("推送本地流失败: " + error)
+                                    console.error("推送本地流失败: " + error)
                                 });
                             }).catch(error => {
-                                console.log("初始化本地流失败: " + error)
+                                console.error("初始化本地流失败: " + error)
                             });
                         }).catch(error => {
-                            console.log("进入房间失败： " + error);
+                            console.error("进入房间失败： " + error);
                         });
                     } else {
                         // TODO 关闭视频会议
+                        let stream = that.getStream();
+                        that.client.unpublish(stream).then(() => {
+                            that.client.leave().then(() => {
+                                stream.stop();
+                                stream.close();
+                                that.localStream = null;
+                                that.shareStream = null;
+                                that.stream = {};
+                                that.client = null;
+                                that.userList = [];
+                                that.videoStatus = true;
+                                that.micStatus = true;
+                                that.shareStatus = false;
+                                $('#localStream').css({'z-index': -1}).html('');
+
+                                // TODO 播放大屏的时候退出会议，需要隐藏大屏
+
+                            }).catch(() => {
+                                console.error("退出会议室失败");
+                            });
+                        });
                     }
                 }
             });
