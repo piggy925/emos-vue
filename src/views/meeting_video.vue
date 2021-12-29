@@ -288,6 +288,31 @@ export default {
             that.bigVideoUserId = null;
             $('videoBig').hide();
             $('videoListContainer').show();
+        },
+        videoHandle: function () {
+            let that = this;
+            if (that.shareStatus) {
+                that.$confirm("屏幕共享中，无法开关摄像头", "提示", {
+                    confirmButtonText: "确定"
+                })
+                return;
+            }
+            if (that.videoStatus) {
+                that.localStream.muteVideo();
+            } else {
+                that.localStream.unmuteVideo();
+            }
+            that.videoStatus = !that.videoStatus;
+        },
+        micHandle: function () {
+            let that = this;
+            let stream = that.stream;
+            if (that.micStatus) {
+                stream.muteAudio();
+            } else {
+                stream.unmuteAudio();
+            }
+            that.micStatus = !that.micStatus;
         }
     },
     created: function () {
