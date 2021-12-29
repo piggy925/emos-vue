@@ -242,7 +242,7 @@ export default {
                             console.error("进入房间失败： " + error);
                         });
                     } else {
-                        // TODO 关闭视频会议
+                        // 关闭视频会议
                         let stream = that.getStream();
                         that.client.unpublish(stream).then(() => {
                             that.client.leave().then(() => {
@@ -258,8 +258,12 @@ export default {
                                 that.shareStatus = false;
                                 $('#localStream').css({'z-index': -1}).html('');
 
-                                // TODO 播放大屏的时候退出会议，需要隐藏大屏
-
+                                // 播放大屏的时候退出会议，需要隐藏大屏
+                                if (that.bigVideoUserId != null) {
+                                    $('videoBig').hide();
+                                    $('videoListContainer').show();
+                                    that.bigVideoUserId = null;
+                                }
                             }).catch(() => {
                                 console.error("退出会议室失败");
                             });
@@ -267,6 +271,23 @@ export default {
                     }
                 }
             });
+        },
+        // 双击大屏时切换到小屏
+        bigVideoHandle: function (userId) {
+            let that = this;
+            that.bigVideoUserId = userId;
+            $('videoListContainer').hide(); // 隐藏视频墙
+            $('videoBig').show(); // 显示大屏控件
+            that.stream[userId].stop(); // 停止远端视频在视频墙播放
+            that.stream[userId].play('videoBig'); // 在大屏控件上播放远端视频
+        },
+        smallVideoHandle: function () {
+            let that = this;
+            that.stream[that.bigVideoUserId].stop();
+            that.stream[that.bigVideoUserId].play(that.bigVideoUserId);
+            that.bigVideoUserId = null;
+            $('videoBig').hide();
+            $('videoListContainer').show();
         }
     },
     created: function () {
