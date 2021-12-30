@@ -260,8 +260,8 @@ export default {
 
                                 // 播放大屏的时候退出会议，需要隐藏大屏
                                 if (that.bigVideoUserId != null) {
-                                    $('videoBig').hide();
-                                    $('videoListContainer').show();
+                                    $('#videoBig').hide();
+                                    $('#videoListContainer').show();
                                     that.bigVideoUserId = null;
                                 }
                             }).catch(() => {
@@ -276,8 +276,8 @@ export default {
         bigVideoHandle: function (userId) {
             let that = this;
             that.bigVideoUserId = userId;
-            $('videoListContainer').hide(); // 隐藏视频墙
-            $('videoBig').show(); // 显示大屏控件
+            $('#videoListContainer').hide(); // 隐藏视频墙
+            $('#videoBig').show(); // 显示大屏控件
             that.stream[userId].stop(); // 停止远端视频在视频墙播放
             that.stream[userId].play('videoBig'); // 在大屏控件上播放远端视频
         },
@@ -286,8 +286,8 @@ export default {
             that.stream[that.bigVideoUserId].stop();
             that.stream[that.bigVideoUserId].play(that.bigVideoUserId);
             that.bigVideoUserId = null;
-            $('videoBig').hide();
-            $('videoListContainer').show();
+            $('#videoBig').hide();
+            $('#videoListContainer').show();
         },
         videoHandle: function () {
             let that = this;
@@ -306,13 +306,71 @@ export default {
         },
         micHandle: function () {
             let that = this;
-            let stream = that.stream;
+            let stream = that.getStream();
             if (that.micStatus) {
                 stream.muteAudio();
             } else {
                 stream.unmuteAudio();
             }
             that.micStatus = !that.micStatus;
+        },
+        shareHandle: function () {
+            let that = this;
+            if (!that.meetingStatus) {
+                that.$message("请先进入视频会议才能共享屏幕", "提示", {
+                    confirmButtonText: "确定"
+                })
+                return;
+            }
+            if (!TRTC.isScreenShareSupported()) {
+                that.$message("当前浏览器不支持共享屏幕", "提示", {
+                    confirmButtonText: "确定"
+                })
+                return;
+            }
+            that.shareStatus = !that.shareStatus;
+            if (that.shareStatus) {
+                let shareStream = TRTC.createStream({
+                    audio: that.micStatus,
+                    screen: true,
+                    userId: that.userId
+                });
+                shareStream.setScreenProfile('1080p');
+                that.shareStream = shareStream;
+                shareStream.initialize().then(() => {
+                    that.client.unpublish(that.localStream).then(() => {
+                        that.localStream.close();
+                        that.localStream = null;
+                        $('#localStream').css({'z-index': -1});
+                        that.client.publish(shareStream);
+                    });
+                }).catch(error => {
+                    console.error("初始化共享流失败" + error);
+                });
+            } else {
+                let localStream = TRTC.createStream({
+                    userId: that.userId + '',
+                    audio: that.micStatus,
+                    video: that.videoStatus
+                })
+                that.localStream = localStream;
+                localStream.setVideoProfile("480p");
+                localStream.initialize().then(() => {
+                    that.client.unpublish(that.shareStream).then(() => {
+                        that.shareStream.close();
+                        that.shareStream = null;
+                        $('#localStream').css({'z-index': 1});
+                        localStream.play('localStream');
+                        that.client.publish(localStream).then(() => {
+                            console.log("本地流发布成功")
+                        }).catch(error => {
+                            console.error("本地流发布失败" + error);
+                        });
+                    });
+                }).catch(error => {
+                    console.error("初始化本地流失败" + error);
+                });
+            }
         }
     },
     created: function () {
