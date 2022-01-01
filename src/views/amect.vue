@@ -162,54 +162,109 @@
 </template>
 
 <script>
-import dayjs from 'dayjs';
 import AddOrUpdate from './amect-add-or-update.vue';
 import Pay from './amect-pay.vue';
-export default {
-	components: { AddOrUpdate, Pay },
-	data: function() {
-		return {
-			dataForm: {
-				name: null,
-				deptId: null,
-				typeId: null,
-				status: null,
-				date: null
-			},
-			deptList: [],
-			amectTypeList: [],
-			dataList: [],
-			pageIndex: 1,
-			pageSize: 10,
-			totalCount: 0,
-			dataListLoading: false,
-			dataListSelections: [],
-			dataRule: {
-				name: [{ required: false, pattern: '^[\u4e00-\u9fa5]{1,10}$', message: '姓名格式错误' }]
-			},
-			addOrUpdateVisible: false,
-			payVisible: false
-		};
-	},
-	methods: {
-		loadDeptList: function() {
-			let that = this;
-			that.$http('dept/searchAllDept', 'GET', null, true, function(resp) {
-				that.deptList = resp.list;
-			});
-		},
-		loadAmectTypeList: function() {
-			let that = this;
-			that.$http('amect_type/searchAllAmectType', 'GET', {}, true, function(resp) {
-				that.amectTypeList = resp.list;
-			});
-		}
-	},
-	created: function() {
-		this.loadDeptList();
-		this.loadAmectTypeList();
+import dayjs from "dayjs";
 
-	}
+export default {
+    components: {AddOrUpdate, Pay},
+    data: function () {
+        return {
+            dataForm: {
+                name: null,
+                deptId: null,
+                typeId: null,
+                status: null,
+                date: null
+            },
+            deptList: [],
+            amectTypeList: [],
+            dataList: [],
+            pageIndex: 1,
+            pageSize: 10,
+            totalCount: 0,
+            dataListLoading: false,
+            dataListSelections: [],
+            dataRule: {
+                name: [{required: false, pattern: '^[\u4e00-\u9fa5]{1,10}$', message: '姓名格式错误'}]
+            },
+            addOrUpdateVisible: false,
+            payVisible: false
+        };
+    },
+    methods: {
+        loadDeptList: function () {
+            let that = this;
+            that.$http('dept/searchAllDept', 'GET', null, true, function (resp) {
+                that.deptList = resp.list;
+            });
+        },
+        loadAmectTypeList: function () {
+            let that = this;
+            that.$http('amect_type/searchAllAmectType', 'GET', {}, true, function (resp) {
+                that.amectTypeList = resp.list;
+            });
+        },
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                name: that.dataForm.name,
+                deptId: that.dataForm.deptId,
+                typeId: that.dataForm.typeId,
+                status: that.dataForm.status,
+                page: that.pageIndex,
+                length: that.pageSize
+            };
+            if (that.dataForm.date != null && that.dataForm.date.length == 2) {
+                let startDate = that.dataForm.date[0];
+                let endDate = that.dataForm.date[1];
+                data.startDate = dayjs(startDate).format('YYYY-MM-DD');
+                data.endDate = dayjs(endDate).format('YYYY-MM-DD');
+            }
+            that.$http("amect/searchAmectByPage", "POST", data, true, resp => {
+                let page = resp.page;
+                for (let one of page.list) {
+                    if (one.status == 1) {
+                        one.status = "未缴纳";
+                    } else if (one.status == 2) {
+                        one.status = "已缴纳";
+                    }
+                }
+                that.dataList = page.list;
+                that.totalCount = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        },
+        searchHandle: function () {
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    this.$refs['dataForm'].clearValidate();
+                    if (this.dataForm.name == '') {
+                        this.dataForm.name = null
+                    }
+                    this.pageIndex = 1;
+                    this.loadDataList();
+                } else {
+                    return false;
+                }
+            });
+        }
+    },
+    created: function () {
+        this.loadDeptList();
+        this.loadAmectTypeList();
+        this.loadDataList();
+    }
 };
 </script>
 
