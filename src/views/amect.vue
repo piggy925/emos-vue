@@ -193,6 +193,10 @@ export default {
         };
     },
     methods: {
+        selectable: function (row, index) {
+            // 只有未缴纳的罚款记录才能被选中
+            return row.status != "已缴纳";
+        },
         loadDeptList: function () {
             let that = this;
             that.$http('dept/searchAllDept', 'GET', null, true, function (resp) {
@@ -245,6 +249,9 @@ export default {
             this.pageIndex = val;
             this.loadDataList();
         },
+        selectionChangeHandle: function (val) {
+            this.dataListSelections = val;
+        },
         searchHandle: function () {
             this.$refs['dataForm'].validate(valid => {
                 if (valid) {
@@ -270,6 +277,40 @@ export default {
             this.$nextTick(() => {
                 this.$refs.addOrUpdate.init(id);
             });
+        },
+        deleteHandle: function (id) {
+            let that = this;
+            let ids = id ? [id] : that.dataListSelections.map(item => item.id);
+            if (ids.length == 0) {
+                that.$message({
+                    message: "没有选中记录",
+                    type: "warning",
+                    duration: 1200
+                });
+            } else {
+                that.$confirm(`确定要删除选中的记录？`, "提示", {
+                    confirmButtonText: "确定",
+                    cancelButtonText: "取消",
+                    type: "warning"
+                }).then(() => {
+                    that.$http("amect/deleteAmectByIds", "DELETE", {ids: ids}, true, resp => {
+                        if (resp.rows > 0) {
+                            that.$message({
+                                message: "操作成功",
+                                type: "success",
+                                duration: 1200
+                            });
+                            that.loadDataList();
+                        } else {
+                            that.$message({
+                                message: "未能删除记录",
+                                type: "error",
+                                duration: 1200
+                            });
+                        }
+                    });
+                });
+            }
         }
     },
     created: function () {
