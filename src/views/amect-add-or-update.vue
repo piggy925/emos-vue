@@ -80,33 +80,65 @@ export default {
 		};
 	},
 	methods: {
-		init: function(id) {
-			let that = this;
-			that.dataForm.id = id || 0;
-			that.visible = true;
-			that.$nextTick(() => {
-				that.$refs['dataForm'].resetFields();
-				that.$http('amect_type/searchAllAmectType', 'GET', {}, true, function(resp) {
-					that.amectTypeList = resp.list;
-				});
-				that.$http('user/searchAllUser', 'GET', null, true, function(resp) {
-					let temp = [];
-					for (let one of resp.list) {
-						temp.push({ key: one.id, label: one.name });
-					}
-					that.users = temp;
-				});
-				if (id) {
-					that.$http('amect/searchById', 'POST', { id: id }, true, function(resp) {
-						that.dataForm.typeId = resp.typeId;
-						that.dataForm.amount = resp.amount+"";
-						that.dataForm.reason = resp.reason;
-					});
-				}
-			});
-		},
-		
-	}
+        init: function (id) {
+            let that = this;
+            that.dataForm.id = id || 0;
+            that.visible = true;
+            that.$nextTick(() => {
+                that.$refs['dataForm'].resetFields();
+                that.$http('amect_type/searchAllAmectType', 'GET', {}, true, function (resp) {
+                    that.amectTypeList = resp.list;
+                });
+                that.$http('user/searchAllUser', 'GET', null, true, function (resp) {
+                    let temp = [];
+                    for (let one of resp.list) {
+                        temp.push({key: one.id, label: one.name});
+                    }
+                    that.users = temp;
+                });
+                if (id) {
+                    that.$http('amect/searchById', 'POST', {id: id}, true, function (resp) {
+                        that.dataForm.typeId = resp.typeId;
+                        that.dataForm.amount = resp.amount + "";
+                        that.dataForm.reason = resp.reason;
+                    });
+                }
+            });
+        },
+        dataFormSubmit: function () {
+            let that = this;
+            let data = {
+                userId: that.dataForm.members,
+                amount: that.dataForm.amount,
+                typeId: that.dataForm.typeId,
+                reason: that.dataForm.reason
+            }
+            if (that.dataForm.id) {
+                that.id = that.dataForm.id;
+            }
+            that.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    that.$http(`amect/${!that.dataForm.id ? 'insert' : 'update'}`, "POST", data, true, resp => {
+                        if (resp.rows > 0) {
+                            that.visible = false;
+                            that.$emit('refreshDataList');
+                            that.$message({
+                                message: "操作成功",
+                                type: "success",
+                                duration: 1200
+                            });
+                        } else {
+                            that.$message({
+                                message: "操作失败",
+                                type: "error",
+                                duration: 1200
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    }
 };
 </script>
 
