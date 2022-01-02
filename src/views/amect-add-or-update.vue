@@ -114,7 +114,7 @@ export default {
                 reason: that.dataForm.reason
             }
             if (that.dataForm.id) {
-                that.id = that.dataForm.id;
+                data.id = that.dataForm.id;
             }
             that.$refs['dataForm'].validate(valid => {
                 if (valid) {
