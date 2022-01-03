@@ -311,6 +311,12 @@ export default {
                     });
                 });
             }
+        },
+        payHandle: function (id) {
+            this.payVisible = true;
+            this.$nextTick(() => {
+                this.$refs.pay.init(id);
+            });
         }
     },
     created: function () {

@@ -25,8 +25,20 @@ export default {
 		};
 	},
 	methods: {
-		
-	}
+        init: function (id) {
+            let that = this;
+            that.visible = true;
+            that.dataForm.id = id;
+            that.result = false;
+            that.$nextTick(() => {
+                // TODO 使用Web Socket接收后端推送的付款结果
+
+                that.$http("amect/createNativeAmectPayOrder", "POST", {amectId: id}, true, resp => {
+                    that.qrCode = resp.qrCodeBase64;
+                });
+            });
+        }
+    }
 };
 </script>
 
