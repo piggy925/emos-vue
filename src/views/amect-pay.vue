@@ -31,7 +31,16 @@ export default {
             that.dataForm.id = id;
             that.result = false;
             that.$nextTick(() => {
-                // TODO 使用Web Socket接收后端推送的付款结果
+                // 从浏览器cookie中获取token
+                let token = that.$cookies.get('token');
+                // 向WebSocket服务类发送消息，使其缓存session对象
+                that.$socket.sendObj({opt: 'pay_amect', token: token});
+                // 接收服务端推送的消息
+                that.$options.sockets.onmessage = (resp => {
+                    if (resp.data == "收款成功") {
+                        that.result = true;
+                    }
+                });
 
                 that.$http("amect/createNativeAmectPayOrder", "POST", {amectId: id}, true, resp => {
                     that.qrCode = resp.qrCodeBase64;

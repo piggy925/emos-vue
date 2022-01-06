@@ -21,17 +21,17 @@ import html2Canvas from 'html2canvas'
 import JsPDF from 'jspdf'
 //导入echarts库
 import * as echarts from 'echarts'
+// 使用WebSocket，后端项目给前端页面推送通知更
+import VueNativeSock from "vue-native-websocket-vue3";
 
 
 const app = createApp(App) //创建VUE对象
 
 app.use(router) //挂载路由插件
 
-//使用WebSocket，后端项目给前端页面推送通知更
-// import VueNativeSock from "vue-native-websocket-vue3";
-// app.use(VueNativeSock,"ws://localhost:8090/emos-api/socket",{ 
-//     "format": "json"
-// });
+app.use(VueNativeSock, "ws://localhost:8090/emos-api/socket", {
+    "format": "json"
+});
 
 app.use(VueCookies); //挂载Cookie插件
 
