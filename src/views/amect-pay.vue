@@ -46,6 +46,20 @@ export default {
                     that.qrCode = resp.qrCodeBase64;
                 });
             });
+        },
+        cancelHandle: function () {
+            this.visible = false;
+        },
+        successHandle: function () {
+            let that = this;
+            that.visible = false;
+            that.$http('amect/searchNativeAmectPayResult', 'POST', {amectId: that.dataForm.id}, true, function (resp) {
+                that.$emit('refreshDataList');
+            });
+        },
+        closeHandle: function () {
+            this.visible = false;
+            this.$emit('refreshDataList');
         }
     }
 };
