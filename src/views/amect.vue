@@ -317,6 +317,9 @@ export default {
             this.$nextTick(() => {
                 this.$refs.pay.init(id);
             });
+        },
+        reportHandle: function () {
+            this.$router.push({name: 'AmectReport'});
         }
     },
     created: function () {
