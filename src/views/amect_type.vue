@@ -82,33 +82,73 @@
 
 <script>
 import AddOrUpdate from './amect_type-add-or-update.vue';
+
 export default {
-	components: {
-		AddOrUpdate
-	},
-	data: function() {
-		return {
-			dataForm: {
-				type: null
-			},
-			dataList: [],
-			pageIndex: 1,
-			pageSize: 10,
-			totalCount: 0,
-			dataListLoading: false,
-			dataListSelections: [],
-			addOrUpdateVisible: false,
-			dataRule: {
-				type: [{ required: false, pattern: '^[a-zA-Z0-9\u4e00-\u9fa5]{1,10}$', message: '类型名称格式错误' }]
-			}
-		};
-	},
-	methods: {
-		
-	},
-	created: function() {
-		
-	}
+    components: {
+        AddOrUpdate
+    },
+    data: function () {
+        return {
+            dataForm: {
+                type: null
+            },
+            dataList: [],
+            pageIndex: 1,
+            pageSize: 10,
+            totalCount: 0,
+            dataListLoading: false,
+            dataListSelections: [],
+            addOrUpdateVisible: false,
+            dataRule: {
+                type: [{required: false, pattern: '^[a-zA-Z0-9\u4e00-\u9fa5]{1,10}$', message: '类型名称格式错误'}]
+            }
+        };
+    },
+    methods: {
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                type: that.dataForm.type,
+                page: that.pageIndex,
+                length: that.pageSize
+            };
+            that.$http('amect_type/searchAmectTypeByPage', 'POST', data, true, function (resp) {
+                let page = resp.page;
+                that.dataList = page.list;
+                that.totalCount = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        },
+        searchHandle: function () {
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    this.$refs['dataForm'].clearValidate();
+                    if (this.dataForm.type == '') {
+                        this.dataForm.type = null;
+                    }
+                    if (this.pageIndex != 1) {
+                        this.pageIndex = 1;
+                    }
+                    this.loadDataList();
+                } else {
+                    return false;
+                }
+            });
+        }
+    },
+    created: function () {
+        this.loadDataList();
+    }
 };
 </script>
 
