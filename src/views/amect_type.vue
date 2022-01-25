@@ -144,6 +144,12 @@ export default {
                     return false;
                 }
             });
+        },
+        addHandle: function () {
+            this.addOrUpdateVisible = true;
+            this.$nextTick(() => {
+                this.$refs.addOrUpdate.init();
+            });
         }
     },
     created: function () {

@@ -46,22 +46,55 @@ export default {
 		};
 	},
 	methods: {
-		init: function(id) {
-			let that = this;
-			that.dataForm.id = id || 0;
-			that.visible = true;
-			that.$nextTick(() => {
-				that.$refs['dataForm'].resetFields();
-				if (id) {
-					that.$http('amect_type/searchById', 'POST', { id: id }, true, function(resp) {
-						that.dataForm.type = resp.type;
-						that.dataForm.money = resp.money+"";
-					});
-				}
-			});
-		},
-		
-	}
+        init: function (id) {
+            let that = this;
+            that.dataForm.id = id || 0;
+            that.visible = true;
+            that.$nextTick(() => {
+                that.$refs['dataForm'].resetFields();
+                if (id) {
+                    that.$http('amect_type/searchById', 'POST', {id: id}, true, function (resp) {
+                        that.dataForm.type = resp.type;
+                        that.dataForm.money = resp.money + "";
+                    });
+                }
+            });
+        },
+        dataFormSubmit: function () {
+            let that = this;
+            let data = {
+                type: that.dataForm.type,
+                money: that.dataForm.money
+            };
+            if (that.dataForm.id) {
+                data.id = that.dataForm.id;
+            }
+            console.log(data);
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    that.$http(`amect_type/${!that.dataForm.id ? 'insert' : 'update'}`, 'POST', data, true, function (
+                        resp
+                    ) {
+                        if (resp.rows > 0) {
+                            that.visible = false;
+                            that.$emit('refreshDataList');
+                            that.$message({
+                                message: '操作成功',
+                                type: 'success',
+                                duration: 1200
+                            });
+                        } else {
+                            that.$message({
+                                message: '操作失败',
+                                type: 'error',
+                                duration: 1200
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    }
 };
 </script>
 
