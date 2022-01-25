@@ -129,6 +129,15 @@ export default {
             this.pageIndex = val;
             this.loadDataList();
         },
+        selectionChangeHandle: function (val) {
+            this.dataListSelections = val;
+        },
+        selectable: function (row, index) {
+            if (row.canDelete == 'true') {
+                return true;
+            }
+            return false;
+        },
         searchHandle: function () {
             this.$refs['dataForm'].validate(valid => {
                 if (valid) {
@@ -156,6 +165,46 @@ export default {
             this.$nextTick(() => {
                 this.$refs.addOrUpdate.init(id);
             });
+        },
+        deleteHandle: function (id) {
+            let that = this;
+            let ids = id
+                ? [id]
+                : that.dataListSelections.map(item => {
+                    return item.id;
+                });
+            if (ids.length == 0) {
+                that.$message({
+                    message: '没有选中记录',
+                    type: 'warning',
+                    duration: 1200
+                });
+            } else {
+                that.$confirm(`确定要删除选中的记录？`, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    that.$http('amect_type/deleteAmectTypeByIds', 'POST', {ids: ids}, true, function (resp) {
+                        if (resp.rows > 0) {
+                            that.$message({
+                                message: '操作成功',
+                                type: 'success',
+                                duration: 1200,
+                                onClose: () => {
+                                    that.loadDataList();
+                                }
+                            });
+                        } else {
+                            that.$message({
+                                message: '未能删除记录',
+                                type: 'warning',
+                                duration: 1200
+                            });
+                        }
+                    });
+                });
+            }
         }
     },
     created: function () {
