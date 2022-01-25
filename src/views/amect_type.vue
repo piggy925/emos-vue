@@ -150,6 +150,12 @@ export default {
             this.$nextTick(() => {
                 this.$refs.addOrUpdate.init();
             });
+        },
+        updateHandle: function (id) {
+            this.addOrUpdateVisible = true;
+            this.$nextTick(() => {
+                this.$refs.addOrUpdate.init(id);
+            });
         }
     },
     created: function () {
