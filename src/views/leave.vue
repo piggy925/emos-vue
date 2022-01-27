@@ -128,45 +128,108 @@
 </template>
 
 <script>
-import dayjs from 'dayjs';
 import LeaveAdd from './leave-add.vue';
 import LeavePdf from './leave_pdf.vue';
+import dayjs from "dayjs";
+
 export default {
-	components: { LeaveAdd, LeavePdf },
-	data: function() {
-		return {
-			pageIndex: 1,
-			pageSize: 10,
-			totalPage: 0,
-			dataListLoading: false,
-			dataListSelections: [],
-			dataForm: {
-				name: null,
-				deptId: null,
-				date: null,
-				type: null,
-				status: null
-			},
-			dataList: [],
-			deptList: [],
-			addVisible: false,
-			pdfVisible: false,
-			dataRule: {
-				name: [{ required: false, pattern: '^[\u4e00-\u9fa5]{1,10}$', message: '姓名格式错误' }]
-			}
-		};
-	},
-	methods: {
-		loadDeptList: function() {
-			let that = this;
-			that.$http('dept/searchAllDept', 'GET', null, true, function(resp) {
-				that.deptList = resp.list;
-			});
-		},
-	},
-	created: function() {
-		this.loadDeptList();
-	}
+    components: {LeaveAdd, LeavePdf},
+    data: function () {
+        return {
+            pageIndex: 1,
+            pageSize: 10,
+            totalPage: 0,
+            dataListLoading: false,
+            dataListSelections: [],
+            dataForm: {
+                name: null,
+                deptId: null,
+                date: null,
+                type: null,
+                status: null
+            },
+            dataList: [],
+            deptList: [],
+            addVisible: false,
+            pdfVisible: false,
+            dataRule: {
+                name: [{required: false, pattern: '^[\u4e00-\u9fa5]{1,10}$', message: '姓名格式错误'}]
+            }
+        };
+    },
+    methods: {
+        loadDeptList: function () {
+            let that = this;
+            that.$http('dept/searchAllDept', 'GET', null, true, function (resp) {
+                that.deptList = resp.list;
+            });
+        },
+        loadDataList: function () {
+            let that = this;
+            that.dataListLoading = true;
+            let data = {
+                name: that.dataForm.name,
+                deptId: that.dataForm.deptId,
+                date: that.dataForm.date,
+                type: that.dataForm.type,
+                status: that.dataForm.status,
+                page: that.pageIndex,
+                length: that.pageSize
+            };
+            if (data.date != null && data.date != "") {
+                data.date = dayjs(that.dataForm.date).format("YYYY-MM-DD");
+            }
+            that.$http("leave/searchLeaveByPage", "POST", data, true, resp => {
+                let page = resp.page;
+                for (let one of page.list) {
+                    if (one.type == 1) {
+                        one.type = '病假';
+                    } else if (one.type == 2) {
+                        one.type = '事假';
+                    }
+                    if (one.status == 1) {
+                        one.status = '请假中';
+                    } else if (one.status == 2) {
+                        one.status = '不同意';
+                    } else if (one.status == 3) {
+                        one.status = '已同意';
+                    }
+                }
+                that.dataList = page.list;
+                that.totalPage = page.totalCount;
+                that.dataListLoading = false;
+            });
+        },
+        sizeChangeHandle: function (val) {
+            this.pageSize = val;
+            this.pageIndex = 1;
+            this.loadDataList();
+        },
+        currentChangeHandle: function (val) {
+            this.pageIndex = val;
+            this.loadDataList();
+        },
+        searchHandle: function () {
+            this.$refs['dataForm'].validate(valid => {
+                if (valid) {
+                    this.$refs['dataForm'].clearValidate();
+                    if (this.dataForm.name == '') {
+                        this.dataForm.name = null;
+                    }
+                    if (this.pageIndex != 1) {
+                        this.pageIndex = 1;
+                    }
+                    this.loadDataList();
+                } else {
+                    return false;
+                }
+            });
+        }
+    },
+    created: function () {
+        this.loadDeptList();
+        this.loadDataList();
+    }
 };
 </script>
 
